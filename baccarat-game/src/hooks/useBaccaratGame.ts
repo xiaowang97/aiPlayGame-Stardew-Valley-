@@ -7,7 +7,9 @@ import {
   shouldPlayerDrawThirdCard,
   shouldBankerDrawThirdCard,
   determineWinner,
-  MIN_CARDS_BEFORE_SHUFFLE
+  MIN_CARDS_BEFORE_SHUFFLE,
+  PandaResultType,
+  determinePandaResults
 } from '../game/BaccaratLogic';
 
 // 游戏历史记录项
@@ -15,6 +17,7 @@ export interface GameHistoryItem {
   result: GameResultType;
   playerScore: number;
   bankerScore: number;
+  pandaResults?: PandaResultType | null;
 }
 
 // 龙统计
@@ -40,6 +43,7 @@ export interface BaccaratGameState {
   gameHistory: GameHistoryItem[];
   needToShuffle: boolean;
   dragonStats: DragonStats;
+  pandaResults: PandaResultType | null;
 }
 
 export const useBaccaratGame = () => {
@@ -61,27 +65,38 @@ export const useBaccaratGame = () => {
       currentBanker: 0,
       currentPlayer: 0,
       currentTie: 0
-    }
+    },
+    pandaResults: null
   });
 
   // 开始新游戏/新一轮
   const startNewGame = () => {
-    // 如果游戏已经开始，先重置当前局
+    // 如果游戏已经开始，重置当前局状态但不需要再次调用startNewGame
     if (state.isGameStarted) {
-      resetGame();
+      setState(prev => ({
+        ...prev,
+        playerHand: [],
+        bankerHand: [],
+        gameResult: '',
+        isGameStarted: false
+      }));
+      
+      // 在状态重置的下一个事件循环中发牌
+      setTimeout(() => dealInitialCards(), 0);
+      return;
     }
 
     // 检查牌是否足够完成一局游戏（最多可能用6张牌）
     if (state.deck.length < 6) {
       setState(prev => ({ ...prev, needToShuffle: true }));
-      alert('牌不够了，请点击"完全重置 & 洗牌"按钮重新开始游戏！');
+      alert('牌不够了，请点击"洗牌"按钮重新开始游戏！');
       return;
     }
 
     // 检查是否需要洗牌（达到预设阈值）
     if (state.deck.length <= MIN_CARDS_BEFORE_SHUFFLE) {
       setState(prev => ({ ...prev, needToShuffle: true }));
-      alert('剩余牌数较少，请点击"完全重置 & 洗牌"按钮以继续游戏！');
+      alert('剩余牌数较少，请点击"洗牌"按钮以继续游戏！');
       return;
     }
 
@@ -207,18 +222,41 @@ export const useBaccaratGame = () => {
     newDeck?: Card[],
     newCardsUsed?: number
   ) => {
+    console.log('游戏结果:', { result, playerTotal, bankerTotal });
+    
     setState(prev => {
       // 更新龙统计
       const newDragonStats = updateDragonStats(result, prev.dragonStats);
+      
+      // 计算熊猫结果
+      let pandaResults = null;
+      if (finalBankerHand) {
+        pandaResults = determinePandaResults(result, bankerTotal, finalBankerHand, playerTotal);
+      } else if (result === '平局！' && bankerTotal === 6 && playerTotal === 6) {
+        // 如果没有提供手牌但是结果是平局且双方都是6点，也要判断熊猫和
+        pandaResults = {
+          isPanda: false,
+          isBigPanda: false,
+          isSmallPanda: false,
+          isPandaPair: false,
+          isPandaTie: true
+        };
+      }
       
       const updates: Partial<BaccaratGameState> = {
         gameResult: result,
         roundsPlayed: prev.roundsPlayed + 1,
         gameHistory: [
           ...prev.gameHistory, 
-          { result, playerScore: playerTotal, bankerScore: bankerTotal }
+          { 
+            result, 
+            playerScore: playerTotal, 
+            bankerScore: bankerTotal,
+            pandaResults
+          }
         ],
-        dragonStats: newDragonStats
+        dragonStats: newDragonStats,
+        pandaResults
       };
       
       // 如果提供了手牌和牌组更新，也进行更新
@@ -319,7 +357,8 @@ export const useBaccaratGame = () => {
         currentBanker: 0,
         currentPlayer: 0,
         currentTie: 0
-      }
+      },
+      pandaResults: null
     });
   };
 

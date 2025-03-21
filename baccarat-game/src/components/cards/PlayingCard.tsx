@@ -9,20 +9,20 @@ interface PlayingCardProps {
 const PlayingCard: React.FC<PlayingCardProps> = ({ card }) => {
   return (
     <Paper
-      elevation={3}
+      elevation={2}
       sx={{
-        p: 2,
-        m: 1,
-        minWidth: 60,
+        p: 1,
+        m: 0.5,
+        minWidth: 45,
         textAlign: 'center',
         color: ['♥', '♦'].includes(card.suit) ? 'red' : 'black',
         backgroundColor: 'white',
         border: '1px solid #ccc',
-        borderRadius: '8px'
+        borderRadius: '4px'
       }}
     >
-      <Typography variant="h6">{card.rank}</Typography>
-      <Typography>{card.suit}</Typography>
+      <Typography variant="subtitle1" sx={{ lineHeight: 1, fontWeight: 'bold' }}>{card.rank}</Typography>
+      <Typography variant="body2" sx={{ lineHeight: 1 }}>{card.suit}</Typography>
     </Paper>
   );
 };

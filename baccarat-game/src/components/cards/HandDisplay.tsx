@@ -13,23 +13,21 @@ const HandDisplay: React.FC<HandDisplayProps> = ({ title, cards }) => {
   const total = calculateHandTotal(cards);
 
   return (
-    <>
-      <Typography variant="h5" gutterBottom align="center">
+    <Box sx={{ textAlign: 'center' }}>
+      <Typography variant="h6" sx={{ mb: 0.5 }}>
         {title}
       </Typography>
-      <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
         {cards.map((card, index) => (
-          <Box key={index}>
-            <PlayingCard card={card} />
-          </Box>
+          <PlayingCard key={index} card={card} />
         ))}
       </Box>
       {cards.length > 0 && (
-        <Typography variant="h6" align="center" sx={{ mt: 2 }}>
+        <Typography variant="subtitle1" sx={{ mt: 0.5 }}>
           点数：{total}
         </Typography>
       )}
-    </>
+    </Box>
   );
 };
 

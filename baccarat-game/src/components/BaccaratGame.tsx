@@ -3,8 +3,8 @@ import { Box, Typography, Grid, Paper } from '@mui/material';
 import HandDisplay from './cards/HandDisplay';
 import GameControls from './GameControls';
 import RoadMaps from './roadmaps/RoadMaps';
+import PandaResults from './PandaResults';
 import useBaccaratGame from '../hooks/useBaccaratGame';
-import { initializeDecks } from '../game/BaccaratLogic';
 
 const BaccaratGame: React.FC = () => {
   // 使用自定义Hook管理游戏状态
@@ -20,6 +20,7 @@ const BaccaratGame: React.FC = () => {
     gameHistory,
     needToShuffle,
     dragonStats,
+    pandaResults,
     startNewGame,
     resetGame,
     fullReset,
@@ -31,11 +32,11 @@ const BaccaratGame: React.FC = () => {
     if (deck.length === 0) {
       fullReset();
     }
-  }, []);
+  }, [deck.length, fullReset]);
 
   return (
-    <Box sx={{ p: 4, maxWidth: 1200, mx: 'auto' }}>
-      <Typography variant="h3" align="center" gutterBottom sx={{ mb: 4 }}>
+    <Box sx={{ p: 2, maxWidth: 1000, mx: 'auto' }}>
+      <Typography variant="h4" align="center" gutterBottom sx={{ mb: 2 }}>
         百家乐
       </Typography>
 
@@ -52,8 +53,8 @@ const BaccaratGame: React.FC = () => {
         deckSize={deck.length}
       />
 
-      <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
-        <Grid container spacing={4}>
+      <Paper elevation={3} sx={{ p: 2, mb: 2 }}>
+        <Grid container spacing={2}>
           <Grid item xs={12} md={6}>
             <HandDisplay title="闲家" cards={playerHand} />
           </Grid>
@@ -64,10 +65,21 @@ const BaccaratGame: React.FC = () => {
         </Grid>
 
         {gameResult && (
-          <Typography variant="h4" align="center" sx={{ mt: 4, color: 'primary.main' }}>
+          <Typography variant="h5" align="center" sx={{ mt: 2, color: 'primary.main' }}>
             {gameResult}
           </Typography>
         )}
+        
+        {/* Debug info */}
+        {(gameResult === '平局！' && playerHand.length > 0 && bankerHand.length > 0) && (
+          <Typography variant="body2" align="center" sx={{ mt: 1, color: 'text.secondary' }}>
+            闲家点数: {playerHand.reduce((sum, card) => (sum + card.value) % 10, 0)}, 
+            庄家点数: {bankerHand.reduce((sum, card) => (sum + card.value) % 10, 0)}
+          </Typography>
+        )}
+        
+        {/* 熊猫结果显示 */}
+        <PandaResults pandaResults={pandaResults} />
       </Paper>
 
       {/* 路牌系统 */}

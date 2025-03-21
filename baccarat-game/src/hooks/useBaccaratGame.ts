@@ -11,6 +11,7 @@ import {
   PandaResultType,
   determinePandaResults
 } from '../game/BaccaratLogic';
+import { BetType } from '../components/BettingArea';
 
 // 游戏历史记录项
 export interface GameHistoryItem {
@@ -44,6 +45,8 @@ export interface BaccaratGameState {
   needToShuffle: boolean;
   dragonStats: DragonStats;
   pandaResults: PandaResultType | null;
+  balance: number; // 新增：玩家余额
+  currentBets: Record<BetType, number>; // 新增：当前投注
 }
 
 export const useBaccaratGame = () => {
@@ -66,7 +69,19 @@ export const useBaccaratGame = () => {
       currentPlayer: 0,
       currentTie: 0
     },
-    pandaResults: null
+    pandaResults: null,
+    balance: 10000, // 新增：初始余额10000
+    currentBets: {
+      '闲家': 0,
+      '庄家': 0,
+      '平局': 0,
+      '闲对子': 0,
+      '庄对子': 0,
+      '大熊猫': 0,
+      '小熊猫': 0,
+      '熊猫对子': 0,
+      '熊猫和': 0
+    } // 新增：初始投注
   });
 
   // 开始新游戏/新一轮
@@ -78,7 +93,8 @@ export const useBaccaratGame = () => {
         playerHand: [],
         bankerHand: [],
         gameResult: '',
-        isGameStarted: false
+        isGameStarted: false,
+        pandaResults: null // 确保熊猫结果也被清除
       }));
       
       // 在状态重置的下一个事件循环中发牌
@@ -86,6 +102,30 @@ export const useBaccaratGame = () => {
       return;
     }
 
+    // 如果有上一局的结果，先清除
+    if (state.gameResult !== '') {
+      setState(prev => ({
+        ...prev,
+        playerHand: [],
+        bankerHand: [],
+        gameResult: '',
+        pandaResults: null // 确保熊猫结果也被清除
+      }));
+      
+      // 短暂延迟后再发牌，以便UI能够更新
+      setTimeout(() => {
+        // 检查牌并发牌逻辑
+        checkCardsAndDeal();
+      }, 50);
+      return;
+    }
+
+    // 直接检查牌并发牌
+    checkCardsAndDeal();
+  };
+
+  // 抽取检查牌组并发牌的逻辑为单独函数
+  const checkCardsAndDeal = () => {
     // 检查牌是否足够完成一局游戏（最多可能用6张牌）
     if (state.deck.length < 6) {
       setState(prev => ({ ...prev, needToShuffle: true }));
@@ -331,7 +371,8 @@ export const useBaccaratGame = () => {
       playerHand: [],
       bankerHand: [],
       gameResult: '',
-      isGameStarted: false
+      isGameStarted: false,
+      pandaResults: null // 确保熊猫结果也被清除
     }));
   };
 
@@ -358,7 +399,19 @@ export const useBaccaratGame = () => {
         currentPlayer: 0,
         currentTie: 0
       },
-      pandaResults: null
+      pandaResults: null,
+      balance: 10000, // 新增：初始余额10000
+      currentBets: {
+        '闲家': 0,
+        '庄家': 0,
+        '平局': 0,
+        '闲对子': 0,
+        '庄对子': 0,
+        '大熊猫': 0,
+        '小熊猫': 0,
+        '熊猫对子': 0,
+        '熊猫和': 0
+      } // 新增：初始投注
     });
   };
 
@@ -370,12 +423,30 @@ export const useBaccaratGame = () => {
     }));
   };
 
+  // 新增：更新余额
+  const updateBalance = (newBalance: number) => {
+    setState(prev => ({
+      ...prev,
+      balance: newBalance
+    }));
+  };
+
+  // 新增：更新当前投注
+  const updateBets = (newBets: Record<BetType, number>) => {
+    setState(prev => ({
+      ...prev,
+      currentBets: newBets
+    }));
+  };
+
   return {
     ...state,
     startNewGame,
     resetGame,
     fullReset,
-    handleDeckCountChange
+    handleDeckCountChange,
+    updateBalance, // 新增：导出更新余额方法
+    updateBets // 新增：导出更新投注方法
   };
 };
 
